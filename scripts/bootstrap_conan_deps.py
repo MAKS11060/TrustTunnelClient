@@ -7,12 +7,10 @@ before running the cmake command. Besides that, it may be also required after
 the dependencies updates.
 
 Usage:
-    bootstrap_conan_deps.py [nlc_url [dns_libs_url]]
+    bootstrap_conan_deps.py [nlc_url]
 
 `nlc_url` is the URL of AdGuard's NativeLibsCommon repository
 (defaults to https://github.com/AdguardTeam/NativeLibsCommon.git).
-`nlc_url` is the URL of AdGuard's DnsLibs repository
-(defaults to https://github.com/AdguardTeam/DnsLibs.git).
 """
 
 import os
@@ -20,12 +18,13 @@ import shutil
 import stat
 import subprocess
 import sys
+import yaml
 
 work_dir = os.path.dirname(os.path.realpath(__file__))
 project_dir = os.path.dirname(work_dir)
-nlc_url = sys.argv[1] if len(sys.argv) > 1 else 'https://github.com/AdguardTeam/NativeLibsCommon.git'
+nlc_url = 'https://github.com/AdguardTeam/NativeLibsCommon.git'
 nlc_dir_name = "native-libs-common"
-dns_libs_url = sys.argv[2] if len(sys.argv) > 2 else 'https://github.com/AdguardTeam/DnsLibs.git'
+dns_libs_url = 'https://github.com/AdguardTeam/DnsLibs.git'
 dns_libs_dir_name = "dns-libs"
 nlc_versions = []
 
@@ -70,7 +69,8 @@ try:
                     and ('@adguard/oss"' in line):
                 nlc_versions.append(line.split('@')[0].split('/')[1])
 
-    subprocess.run(["python3", os.path.join("scripts", "export_conan.sh"), dns_libs_version], check=True)
+    # Use shell script instead of Python script
+    subprocess.run(["bash", os.path.join("scripts", "export_conan.sh")], check=True)
 finally:
     remove_dir_if_exists(dns_libs_dir)
 
@@ -81,8 +81,19 @@ try:
     subprocess.run(["git", "clone", nlc_url, nlc_dir], check=True)
     os.chdir(nlc_dir)
 
+    min_nlc_version = min(nlc_versions)
+    with open("conandata.yml", "r") as file:
+        items = yaml.safe_load(file)["commit_hash"]
+
     for v in nlc_versions:
         subprocess.run(["git", "checkout", "master"], check=True)
-        subprocess.run(["python3", os.path.join(nlc_dir, "scripts", "export_conan.py"), v], check=True)
+        try:
+            # Use shell script instead of Python script
+            subprocess.run(["bash", os.path.join("scripts", "export_conan.sh")], check=True)
+        except:
+            if v in nlc_versions:
+                raise
+            else:
+                continue
 finally:
     remove_dir_if_exists(nlc_dir)

@@ -52,10 +52,7 @@ jobs:
 
       - name: Bootstrap Conan dependencies
         run: |
-          python3 scripts/bootstrap_conan_deps.py \
-            https://github.com/AdguardTeam/NativeLibsCommon.git \
-            https://github.com/AdguardTeam/DnsLibs.git
-
+          python3 scripts/bootstrap_conan_deps.py
       - name: Build Android library
         run: |
           cd platform/android
