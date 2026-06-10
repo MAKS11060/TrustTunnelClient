@@ -53,6 +53,13 @@ jobs:
       - name: Bootstrap Conan dependencies
         run: |
           python3 scripts/bootstrap_conan_deps.py
+
+      - name: Install Conan dependencies
+        run: |
+          conan install --requires="fmt/12.1.0" --build=missing
+          conan install --requires="dns-libs/2.8.54@adguard/oss" --build=missing
+          conan install --requires="native_libs_common/8.1.33@adguard/oss" --build=missing
+
       - name: Build Android library
         run: |
           cd platform/android
