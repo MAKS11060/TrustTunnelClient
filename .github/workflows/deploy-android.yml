@@ -22,12 +22,43 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Configure Conan
+      - name: Install Python 3.13+
         run: |
-          python3 -m pip install conan --upgrade
-          # conan remote add --index 0 art ${{ vars.CONAN_REPO_URL }} || true
-          conan remote add conancenter https://center.conan.io --force
+          python3 --version
+          python3 -m pip install --upgrade pip
 
+      - name: Install CMake 3.24+
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build
+
+      - name: Install LLVM 17+
+        run: |
+          sudo apt-get install -y llvm clang libc++-dev
+
+      - name: Install Conan 2.0.5+
+        run: |
+          python3 -m pip install 'conan>=2.0.5'
+
+      - name: Install Rust 1.85+
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain 1.85 -y
+          source $HOME/.cargo/env
+
+      - name: Configure Conan remotes and profiles
+        run: |
+          conan remote add conancenter https://center.conan.io --force
+          # Если у вас есть приватный Conan репозиторий Adguard, добавьте его:
+          # conan remote add adguard <YOUR_CONAN_REPO_URL> --force
+
+          # Создаёте default профиль если его нет
+          conan profile detect --force
+
+      - name: Bootstrap Conan dependencies
+        run: |
+          python3 scripts/bootstrap_conan_deps.py \
+            https://github.com/AdguardTeam/NativeLibsCommon.git \
+            https://github.com/AdguardTeam/DnsLibs.git
 
       - name: Build Android library
         run: |
@@ -35,6 +66,10 @@ jobs:
           touch local.properties
           CMAKE_DIR=$(dirname $(dirname $(which cmake)))
           echo "cmake.dir=$CMAKE_DIR" >> local.properties
+
+          # Устанавливаем переменные окружения для Conan
+          export CONAN_V2_MODE=1
+
           ./gradlew :lib:assembleRelease
 
       - name: Publish to GitHub Packages
