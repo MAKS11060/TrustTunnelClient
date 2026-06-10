@@ -6,7 +6,15 @@ on:
 jobs:
   deploy-android:
     name: Deploy library / Android
-    runs-on: ubuntu-latest
+    # runs-on: ubuntu-latest
+    runs-on:
+      - ephemeral
+      - ephemeral-linux
+      - ephemeral-limit-memory-8192
+      - ephemeral-limit-cpu-6
+    container:
+      image: adguard/core-libs:2.10
+
     permissions:
       contents: read
       packages: write
@@ -21,8 +29,10 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Install Conan
-        run: pip install conan
+      - name: Configure Conan
+        run: |
+          python3 -m pip install conan --upgrade
+          conan remote add --index 0 art ${{ vars.CONAN_REPO_URL }} || true
 
       - name: Build Android library
         run: |
