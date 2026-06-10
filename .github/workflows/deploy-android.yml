@@ -6,37 +6,72 @@ on:
 jobs:
   deploy-android:
     name: Deploy library / Android
-    if: github.repository == 'AdGuardSoftwareLimited/trusttunnel-client'
-    environment: android-gh-packages
-    runs-on:
-      - ephemeral
-      - ephemeral-linux
-      - ${{ vars.BUILD_IMAGE_VERSION_CORELIBS_BUILDER }}
-      - ephemeral-limit-memory-8192
-      - ephemeral-limit-cpu-6
-    container:
-      image: adguard/core-libs:2.10
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
-      - name: Configure Conan
-        run: |
-          python3 -m pip install conan --upgrade
-          conan remote add --index 0 art ${{ vars.CONAN_REPO_URL }} || true
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
 
       - name: Build Android library
         run: |
           cd platform/android
           touch local.properties
           CMAKE_DIR=$(dirname $(dirname $(which cmake)))
-          echo cmake.dir=$CMAKE_DIR >> local.properties
+          echo "cmake.dir=$CMAKE_DIR" >> local.properties
           ./gradlew :lib:assembleRelease
 
       - name: Publish to GitHub Packages
         env:
-          USERNAME: github
-          TOKEN: ${{ secrets.PUBLIC_REPO_GPR_KEY }}
+          USERNAME: ${{ github.actor }}
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cd platform/android
           ./gradlew :lib:publishReleasePublicationToGitHubPackagesRepository
+
+# jobs:
+#   deploy-android:
+#     name: Deploy library / Android
+#     # if: github.repository == 'AdGuardSoftwareLimited/trusttunnel-client'
+
+#     environment: android-gh-packages
+#     runs-on:
+#       - ephemeral
+#       - ephemeral-linux
+#       - ${{ vars.BUILD_IMAGE_VERSION_CORELIBS_BUILDER }}
+#       - ephemeral-limit-memory-8192
+#       - ephemeral-limit-cpu-6
+#     container:
+#       image: adguard/core-libs:2.10
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v6
+
+#       - name: Configure Conan
+#         run: |
+#           python3 -m pip install conan --upgrade
+#           conan remote add --index 0 art ${{ vars.CONAN_REPO_URL }} || true
+
+#       - name: Build Android library
+#         run: |
+#           cd platform/android
+#           touch local.properties
+#           CMAKE_DIR=$(dirname $(dirname $(which cmake)))
+#           echo cmake.dir=$CMAKE_DIR >> local.properties
+#           ./gradlew :lib:assembleRelease
+
+#       - name: Publish to GitHub Packages
+#         env:
+#           USERNAME: github
+#           TOKEN: ${{ secrets.PUBLIC_REPO_GPR_KEY }}
+#         run: |
+#           cd platform/android
+#           ./gradlew :lib:publishReleasePublicationToGitHubPackagesRepository
