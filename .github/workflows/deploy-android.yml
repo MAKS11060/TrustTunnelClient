@@ -6,14 +6,7 @@ on:
 jobs:
   deploy-android:
     name: Deploy library / Android
-    # runs-on: ubuntu-latest
-    runs-on:
-      - ephemeral
-      - ephemeral-linux
-      - ephemeral-limit-memory-8192
-      - ephemeral-limit-cpu-6
-    container:
-      image: adguard/core-libs:2.10
+    runs-on: ubuntu-latest
 
     permissions:
       contents: read
