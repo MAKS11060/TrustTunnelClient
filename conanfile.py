@@ -11,8 +11,8 @@ class VpnLibsConan(ConanFile):
     name = "vpn-libs"
     license = "Apache-2.0"
     author = "TrustTunnel"
-    url = "https://github.com/TrustTunnel/TrustTunnelClient"
-    vcs_url = "https://github.com/TrustTunnel/TrustTunnelClient.git"
+    url = "https://github.com/MAKS11060/TrustTunnelClient"
+    vcs_url = "https://github.com/MAKS11060/TrustTunnelClient.git"
     description = "TrustTunnel client implementation"
     settings = "os", "compiler", "build_type", "arch"
     options = {

@@ -21,6 +21,9 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Install Conan
+        run: pip install conan
+
       - name: Build Android library
         run: |
           cd platform/android
