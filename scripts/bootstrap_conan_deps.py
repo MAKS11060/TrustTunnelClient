@@ -18,11 +18,10 @@ import shutil
 import stat
 import subprocess
 import sys
-import yaml
 
 work_dir = os.path.dirname(os.path.realpath(__file__))
 project_dir = os.path.dirname(work_dir)
-nlc_url = 'https://github.com/AdguardTeam/NativeLibsCommon.git'
+nlc_url = sys.argv[1] if len(sys.argv) > 1 else 'https://github.com/AdguardTeam/NativeLibsCommon.git'
 nlc_dir_name = "native-libs-common"
 dns_libs_url = 'https://github.com/AdguardTeam/DnsLibs.git'
 dns_libs_dir_name = "dns-libs"
@@ -49,6 +48,7 @@ def remove_dir_if_exists(dir_path):
         shutil.rmtree(dir_path, onerror=on_rm_tree_error)
 
 
+# Extract version requirements from conanfile.py
 with open(os.path.join(project_dir, "conanfile.py"), "r") as file:
     for line in map(str.strip, file.readlines()):
         if line.startswith('self.requires("native_libs_common/') \
@@ -58,22 +58,26 @@ with open(os.path.join(project_dir, "conanfile.py"), "r") as file:
                 and ('@adguard/oss"' in line):
             dns_libs_version = line.split('@')[0].split('/')[1]
 
+# Export dns-libs
 dns_libs_dir = os.path.join(work_dir, dns_libs_dir_name)
 remove_dir_if_exists(dns_libs_dir)
 try:
     subprocess.run(["git", "clone", dns_libs_url, dns_libs_dir], check=True)
     os.chdir(dns_libs_dir)
+
+    # Extract NLC versions from dns-libs conanfile.py too
     with open("conanfile.py", "r") as file:
         for line in map(str.strip, file.readlines()):
             if line.startswith('self.requires("native_libs_common/') \
                     and ('@adguard/oss"' in line):
                 nlc_versions.append(line.split('@')[0].split('/')[1])
 
-    # Use shell script instead of Python script
-    subprocess.run(["bash", os.path.join("scripts", "export_conan.sh")], check=True)
+    # Export dns-libs using shell script
+    subprocess.run(["bash", os.path.join(dns_libs_dir, "scripts", "export_conan.sh")], check=True)
 finally:
     remove_dir_if_exists(dns_libs_dir)
 
+# Export native_libs_common
 os.chdir(work_dir)
 nlc_dir = os.path.join(work_dir, nlc_dir_name)
 remove_dir_if_exists(nlc_dir)
@@ -81,19 +85,18 @@ try:
     subprocess.run(["git", "clone", nlc_url, nlc_dir], check=True)
     os.chdir(nlc_dir)
 
-    min_nlc_version = min(nlc_versions)
-    with open("conandata.yml", "r") as file:
-        items = yaml.safe_load(file)["commit_hash"]
+    # Remove duplicates and sort versions
+    nlc_versions = sorted(set(nlc_versions))
 
     for v in nlc_versions:
         subprocess.run(["git", "checkout", "master"], check=True)
         try:
-            # Use shell script instead of Python script
-            subprocess.run(["bash", os.path.join("scripts", "export_conan.sh")], check=True)
-        except:
-            if v in nlc_versions:
-                raise
-            else:
-                continue
+            # Export native_libs_common using shell script
+            subprocess.run(["bash", os.path.join(nlc_dir, "scripts", "export_conan.sh")], check=True)
+        except Exception as e:
+            print(f"Warning: Failed to export version {v}: {e}")
+            continue
 finally:
     remove_dir_if_exists(nlc_dir)
+
+print("Successfully exported all Conan dependencies")
