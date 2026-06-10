@@ -48,10 +48,6 @@ jobs:
       - name: Configure Conan remotes and profiles
         run: |
           conan remote add conancenter https://center.conan.io --force
-          # Если у вас есть приватный Conan репозиторий Adguard, добавьте его:
-          # conan remote add adguard <YOUR_CONAN_REPO_URL> --force
-
-          # Создаёте default профиль если его нет
           conan profile detect --force
 
       - name: Bootstrap Conan dependencies
@@ -67,9 +63,6 @@ jobs:
           CMAKE_DIR=$(dirname $(dirname $(which cmake)))
           echo "cmake.dir=$CMAKE_DIR" >> local.properties
 
-          # Устанавливаем переменные окружения для Conan
-          export CONAN_V2_MODE=1
-
           ./gradlew :lib:assembleRelease
 
       - name: Publish to GitHub Packages
@@ -79,7 +72,6 @@ jobs:
         run: |
           cd platform/android
           ./gradlew :lib:publishReleasePublicationToGitHubPackagesRepository
-
 # jobs:
 #   deploy-android:
 #     name: Deploy library / Android
