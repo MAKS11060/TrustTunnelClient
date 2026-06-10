@@ -25,7 +25,9 @@ jobs:
       - name: Configure Conan
         run: |
           python3 -m pip install conan --upgrade
-          conan remote add --index 0 art ${{ vars.CONAN_REPO_URL }} || true
+          # conan remote add --index 0 art ${{ vars.CONAN_REPO_URL }} || true
+          conan remote add conancenter https://center.conan.io --force
+
 
       - name: Build Android library
         run: |
